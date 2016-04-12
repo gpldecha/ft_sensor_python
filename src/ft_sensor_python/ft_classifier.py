@@ -1,42 +1,50 @@
 import numpy as np
-from numpy import linalg as LA
-
-
-def bel_function(x, var=1.0):
-    return 1 - np.exp(-(1.0 / var) * (x * x))
-
-
-class ThreasholdContact:
-
-    def __init__(self):
-        self.min_f = 3
-        self.max_f = 5
-        self.nat_noise = 1
-
-    def classify(self,ft_wrench):
-        norm_f = LA.norm(ft_wrench[0:3])
-        print "norm(force) ", norm_f
-        prob_contact = 0
-        if norm_f >= self.nat_noise:
-            prob_contact = bel_function(norm_f-self.nat_noise ,1.0/5.0)
-
-        print "prob contact: ", prob_contact
-
-
+from ft_sensor_python.ft_model_classifier import *
+from ft_sensor_python.ft_threashod_classifer import *
+from circular_buffer import CircularBuffer
+from collections import Counter
 
 class FTClassifier:
-    def __init__(self, rospy):
-        self.rospy = rospy
-        self.threashold_c = ThreasholdContact()
+    def __init__(self, rospy,classifier_type):
+        self.rospy              = rospy
+        self.classifier_type    = classifier_type
+
+        self.threashold_c       = ThreasholdContact()
+        self.gmm_c              = FTGMMClassifier('/home/guillaume/PythonWorkSpace/Peg_sensor_model/models/gmm/gmm.p')
+        self.dgmm_c             = FTGMMClassifier('/home/guillaume/PythonWorkSpace/Peg_sensor_model/models/gmm/dgmm.p')
+        
+        if self.classifier_type == 'gmm':
+            self.c_buffers          = [CircularBuffer(25) for i in range(self.gmm_c.get_num_classes())]
+        elif self.classifier_type == 'threashold':
+            self.c_buffers          = [CircularBuffer(25) for i in range(self.threashold_c.get_num_classes())]
+
+        
+    def buffer_reguliser(self,probs):  
+        props = probs.tolist()
+        for i, x in enumerate(props): 
+            self.c_buffers[i].append(x)
+            probs[i] = self.c_buffers[i].get_most_common()    
+        return np.array(probs)            
 
 
-    def classify(self, ft_wrench):
+    def classify(self, ft_wrench,belief_f,T):
         """
         Given force and torque predict if a contact occured or not
 
         :param ft_wrench: 6 dim numpy matrix
+               belief_f: 4 dim belief feature vector
+               T: position of the socket  
         :return: void
         """
-
-
-        return self.threashold_c.classify(ft_wrench)
+        
+        if self.classifier_type == 'gmm':
+            probs = self.gmm_c.classify(ft_wrench)
+            self.gmm_c.plot(probs)
+        elif self.classifier_type == 'threashold':
+            probs = self.threashold_c.classify(ft_wrench);
+            probs = self.buffer_reguliser(probs)
+            #self.threashold_c.plot(probs)
+        else:
+            print "no such classifier: ", self.classifier_type          
+                  
+        return probs.tolist()

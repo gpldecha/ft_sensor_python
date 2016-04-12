@@ -2,19 +2,42 @@
 
 import roslib
 import rospy
-
+import tf
+import numpy as np
 from ft_sensor_python.ft_sensor_listener import *
+from ft_sensor_python.ft_sensor_publisher import *
 from ft_sensor_python.ft_classifier import *
 
 if __name__ == '__main__':
 
     rospy.init_node('ft_classifier')
+    
+    # threashold, gmm
+    classifier_type = 'threashold';
 
+    ft_publisher    = FTpublisher(rospy)
     ft_listener     = FTlistener(rospy)
-    ft_classifier   = FTClassifier(rospy)
+    ft_classifier   = FTClassifier(rospy,classifier_type=classifier_type)
+    
+    listener        = tf.TransformListener()
+    r               = rospy.Rate(100)
+    
+    T               = np.empty(shape=(0,0))
 
-    r = rospy.Rate(100)
+    print "Starting Y classifier"
+#   bNotReady = True
+#    while bNotReady:
+#        try:
+#            (trans,rot) = listener.lookupTransform('world', 'link_socket', rospy.Time(0))
+#            T           = np.array(trans)
+#            bNotReady = False
+#        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+#            continue
+#        r.sleep()
+#      
+      
+    Y = [0,0,0]
     while not rospy.is_shutdown():
-
-        ft_classifier.classify(ft_listener.ft_wrench)
+        Y = ft_classifier.classify(ft_listener.ft_wrench,ft_listener.belief_f,T)
+        ft_publisher.publish(Y)
         r.sleep()

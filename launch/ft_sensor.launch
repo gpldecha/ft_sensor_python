@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<launch>
+	<node name="lwr_ft_sensor" pkg="ft_sensor_python" type="ft_sensor_node" output="screen"/> 
+</launch>
