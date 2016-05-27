@@ -42,7 +42,7 @@ class FTClassifier:
             self.gmm_c.plot(probs)
         elif self.classifier_type == 'threashold':
             probs = self.threashold_c.classify(ft_wrench);
-            probs = self.buffer_reguliser(probs)
+            #probs = self.buffer_reguliser(probs)
             #self.threashold_c.plot(probs)
         else:
             print "no such classifier: ", self.classifier_type          

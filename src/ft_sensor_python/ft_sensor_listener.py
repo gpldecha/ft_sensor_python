@@ -11,7 +11,7 @@ class FTlistener:
     def __init__(self, rospy):
         self.rospy = rospy
         self.rospy.Subscriber("/ft_sensor/netft_data", WrenchStamped, self.callback_ft)
-        self.rospy.Subscriber("/belief_features", Float64MultiArray, self.callback_belief_feature)
+        #self.rospy.Subscriber("/belief_features", Float64MultiArray, self.callback_belief_feature)
         self.ft_wrench = np.mat(6 * [0]).T
         self.belief_f  = np.empty(shape=(0, 0) )
 
